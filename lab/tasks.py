@@ -18,8 +18,9 @@ db = pymysql.connect("localhost", "root", "", "test")
 # 使用 cursor() 方法创建一个游标对象 cursor
 cursor = db.cursor()
 
+BROKER_URL = "sqla+mysql://root:root@localhost:3306/celery"
 # 新建celery任务
-app = Celery('my_task')
+app = Celery('my_task', broker=BROKER_URL)
 
 @app.task
 def get_stock_daily(start_date, end_date, code):
