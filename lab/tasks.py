@@ -8,12 +8,15 @@ import tushare as ts
 from celery import Celery
 import pymysql
 
+f = open("../token.txt")
+token = f.read()
+f.close()
+
 # tushare
-pro = ts.pro_api(
-    token="574543edce877c61472d1e83e241142cca9d53865e5681180462cc7d")
+pro = ts.pro_api(token="token")
 
 # 打开数据库连接
-db = pymysql.connect("localhost", "root", "", "test")
+db = pymysql.connect("localhost", "root", "123", "test")
 
 # 使用 cursor() 方法创建一个游标对象 cursor
 cursor = db.cursor()
@@ -21,6 +24,7 @@ cursor = db.cursor()
 BROKER_URL = "sqla+mysql://root:root@localhost:3306/celery"
 # 新建celery任务
 app = Celery('my_task', broker=BROKER_URL)
+
 
 @app.task
 def get_stock_daily(start_date, end_date, code):
@@ -49,7 +53,8 @@ def get_stock_daily(start_date, end_date, code):
     for row in data:
         data2 = row.values
         values = ', '.join(['%s'] * len(data2))
-        sql3 = 'INSERT INTO daily_stock VALUES ({values})'.format(values=values)
+        sql3 = 'INSERT INTO daily_stock VALUES ({values})'.format(
+            values=values)
         try:
             # 执行sql语句
             cursor.execute(sql3, tuple(data2))

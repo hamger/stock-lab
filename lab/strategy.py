@@ -13,9 +13,7 @@ class Strategy(object):
         print('共统计' + str(len(self.data)) + '只上市股票。')
 
     def run(self, strategyId):
-        if strategyId == '1':
-            self.strategy_1()
-        # self.['strategy_' + strategyId]()
+        exec('self.strategy_%s()'%strategyId)
 
     def strategy_1(self):
         pro = self.pro
@@ -29,10 +27,6 @@ class Strategy(object):
             tmp = []
             for i, r in df.iterrows():
                 # 条件1：当天为涨幅大于5%
-                print(type(r))
-                print(r.values)
-                print(r.index)
-                print(type(r.values))
                 condition_1 = r['change'] / r['pre_close'] > 5 * 0.01
                 # 条件2：最大跌幅不超过0.3%
                 condition_2 = (r['pre_close'] - r['low']) / r['pre_close'] < 0.3 * 0.01
