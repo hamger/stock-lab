@@ -1,38 +1,48 @@
 # coding:utf-8
 import tushare as ts
 import pandas as pd
+import baostock as bs
+from utils import readCsvFile
 
 
 class Strategy(object):
 
-    def __init__(self, pro):
-        self.pro = pro
-        self.data = pro.query('stock_basic', exchange='', list_status='L',
-                              fields='ts_code,symbol,name,area,industry,list_date')
-
-        print('共统计' + str(len(self.data)) + '只上市股票。')
+    def __init__(self):
+        self.data = readCsvFile('../codes.csv')
 
     def run(self, strategyId):
-        exec('self.strategy_%s()'%strategyId)
+        bs.login()
+        exec('self.strategy_%s()' % strategyId)
+        bs.logout()
 
     def strategy_1(self):
-        pro = self.pro
         res = []
-        for index, row in self.data.iterrows():
-            if index > 1:
-                break
+        for index, row in enumerate(self.data):
+            # if index > 100:
+            #     break
 
-            df = pro.query(
-                'daily', ts_code=row["ts_code"], start_date='20200819', end_date='20200821')
+            rs = bs.query_history_k_data_plus(row,
+                                              "date,code,open,high,low,close,preclose,pctChg,isST",
+                                              start_date='2020-08-20', end_date='2020-08-24',
+                                              frequency="d", adjustflag="2")
+
             tmp = []
-            for i, r in df.iterrows():
-                # 条件1：当天为涨幅大于5%
-                condition_1 = r['change'] / r['pre_close'] > 5 * 0.01
-                # 条件2：最大跌幅不超过0.3%
-                condition_2 = (r['pre_close'] - r['low']) / r['pre_close'] < 0.3 * 0.01
-                if condition_1 and condition_2:
-                    tmp.append(r['change'])
+
+            while (rs.error_code == '0') & rs.next():
+                df = rs.get_row_data()
+                if df[8] == 1:
+                    continue
+                # 条件1：当天为涨幅大于2%
+                condition_1 = float(df[7]) >= 1
+                # # 条件2：最大跌幅不超过1%
+                # condition_2 = (float(df[2]) - float(df[4])) / float(df[2]) < 1 * 0.01
+                # # 条件3：收盘价为最高价
+                # condition_3 = float(df[5]) == float(df[3])
+                if condition_1:
+                    # if condition_1 and condition_2 and condition_3:
+                    tmp.append(df[7])
+            # 连续3天满足要求
             if len(tmp) >= 3:
-                res.append(row["ts_code"])
+                res.append(row)
 
         print(res)
